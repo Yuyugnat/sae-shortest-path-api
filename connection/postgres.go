@@ -43,7 +43,7 @@ func (pc *PostgresConn) Open() {
 	)
 
 	var err error
-	pc.DB, err =  sql.Open(driver, infos)
+	pc.DB, err = sql.Open(driver, infos)
 
 	if err != nil {
 		fmt.Println("Error opening the database", err)
