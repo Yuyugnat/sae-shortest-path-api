@@ -195,13 +195,13 @@ func (repo *NoeudRoutierRepo) GetDistance(geom1, geom2 string) float64 {
 		return -1
 	}
 	// fmt.Println("Distance : ", distance * 6371 * 3.14159265 / 180)
-	return distance * 6371 * 3.14159265 / 180
+	return distance * 6371 * 3.14159265 / 180.0
 }
 
 func (repo *NoeudRoutierRepo) GetDistance2(gid1 int, gid2 int) float64 {
 	query := `
-		SELECT st_x(geom) as x, st_y(geom) as y
-		FROM geom_noeud_routier
+		SELECT lon, lat
+		FROM geom_noeud_routier_xy
 		WHERE gid = $1;
 	`
 	
@@ -225,18 +225,18 @@ func (repo *NoeudRoutierRepo) GetDistance2(gid1 int, gid2 int) float64 {
 	var lon2 float64
 	var lat2 float64
 
-	err = row.Scan(&lon2, &lat2)
+	err = row.Scan(&lon2, &lat2)	
 	if err != nil {
 		log.Fatalln("Error while querying the database caca : ", err)
 	}
 
-	phi1 := lat1 * math.Pi / 180
-	phi2 := lat2 * math.Pi / 180
-	deltaPhi := (lat2 - lat1) * math.Pi / 180
-	deltaLambda := (lon2 - lon1) * math.Pi / 180
+	phi1 := lat1 * math.Pi / 180.0
+	phi2 := lat2 * math.Pi / 180.0
+	deltaPhi := (lat2 - lat1) * math.Pi / 180.0
+	deltaLambda := (lon2 - lon1) * math.Pi / 180.0
 
-	a := math.Sin(deltaPhi/2)*math.Sin(deltaPhi/2) + math.Cos(phi1)*math.Cos(phi2)*math.Sin(deltaLambda/2)*math.Sin(deltaLambda/2)
-	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	a := math.Sin(deltaPhi/2.0)*math.Sin(deltaPhi/2.0) + math.Cos(phi1)*math.Cos(phi2)*math.Sin(deltaLambda/2.0)*math.Sin(deltaLambda/2.0)
+	c := 2.0 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 	distance := 6371.0 * c
 
 	// fmt.Println("Distance : ", distance)

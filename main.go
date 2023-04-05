@@ -7,6 +7,7 @@ import (
 	c "sae-shortest-path/connection"
 	o "sae-shortest-path/objects"
 	s "sae-shortest-path/solver"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -71,8 +72,11 @@ func main() {
 
 		// solver := s.NewDijkstra(departGid, arriveeGid)
 		solver := s.NewAStar(departGid, arriveeGid)
+		now := time.Now()
 		distance, times := solver.Solve()
 		fmt.Printf("{\n")
+		fmt.Printf("   Time: %f\n", time.Since(now).Seconds())
+		fmt.Printf("\n   Distance: %s - %s  => %f\n\n", depart, arrivee, distance)
 		for k, v := range times {
 			fmt.Printf("   Action: %s => took %f seconds in %d calls\n", k, v.Time, v.Call)
 		}
