@@ -16,15 +16,26 @@ type NoeudRoutier struct {
 	voisins  []Voisin
 }
 
-type NoeudRoutierRepo struct{}
+type NoeudRoutierRepo struct{
+	conn *c.PostgresConn
+}
+
+func NewNoeudRoutierRepo() (*NoeudRoutierRepo) {
+	conn, _ := c.GetInstance()
+	return &NoeudRoutierRepo{
+		conn: conn,
+	}
+}
 
 func NewNoeudRoutier(gid int, idRte500 string) *NoeudRoutier {
+	repo := NewNoeudRoutierRepo()
+
 	nr := &NoeudRoutier{
 		gid:      gid,
 		idRte500: idRte500,
 		voisins:  []Voisin{},
 	}
-	nr.GenerateVoisins()
+	repo.GenerateVoisins(nr)
 	return nr
 }
 
@@ -40,26 +51,7 @@ func (n *NoeudRoutier) GetVoisins() []Voisin {
 	return n.voisins
 }
 
-// public function getVoisins(int $noeudRoutierGid): array
-//
-//	{
-//	    $requeteSQL = <<<SQL
-//	        (
-//	            (SELECT noeud_voisin as noeud_routier_gid, troncon_id as troncon_gid, longueur
-//	            from voisins_noeud
-//	            WHERE noeud_routier = :gidTag
-//	        ) UNION (SELECT noeud_routier as noeud_routier_gid, troncon_id as troncon_gid, longueur
-//	         from voisins_noeud
-//	         WHERE noeud_voisin = :gidTag)
-//	        );
-//	    SQL;
-//	    $pdoStatement = ConnexionBaseDeDonnees::getPdo()->prepare($requeteSQL);
-//	    $pdoStatement->execute(array(
-//	        "gidTag" => $noeudRoutierGid
-//	    ));
-//	    return $pdoStatement->fetchAll(PDO::FETCH_ASSOC);
-//	}
-func (n *NoeudRoutier) GenerateVoisins() {
+func (repo *NoeudRoutierRepo) GenerateVoisins(nr *NoeudRoutier) {
 	query := `
 		(
 			SELECT noeud_voisin as noeud_routier_gid_1, noeud_routier as noeud_routier_gid_2, troncon_id as troncon_gid, longueur 
@@ -67,9 +59,9 @@ func (n *NoeudRoutier) GenerateVoisins() {
 			WHERE noeud_routier = $1 or noeud_voisin = $1
 		);
 	`
-	rows, err := c.Conn.DB.Query(query, n.gid)
+	rows, err := repo.conn.DB.Query(query, nr.gid)
 	if err != nil {
-		fmt.Println("Error while querying the database : ", err)
+		fmt.Println("Error while querying the database (GenerateVoisins) : ", err)
 		return
 	}
 	defer rows.Close()
@@ -84,16 +76,12 @@ func (n *NoeudRoutier) GenerateVoisins() {
 			fmt.Println("Error while scanning the database : ", err)
 			return
 		}
-		if nrGid1 == n.gid {
-			n.voisins = append(n.voisins, Voisin{nrGid2, tronconGid, longueur})
+		if nrGid1 == nr.gid {
+			nr.voisins = append(nr.voisins, Voisin{nrGid2, tronconGid, longueur})
 		} else {
-			n.voisins = append(n.voisins, Voisin{nrGid1, tronconGid, longueur})
+			nr.voisins = append(nr.voisins, Voisin{nrGid1, tronconGid, longueur})
 		}
 	}
-}
-
-func NewNoeudRoutierRepo() *NoeudRoutierRepo {
-	return &NoeudRoutierRepo{}
 }
 
 func (repo *NoeudRoutierRepo) GetVoisins(gid int) []Voisin {
@@ -104,9 +92,9 @@ func (repo *NoeudRoutierRepo) GetVoisins(gid int) []Voisin {
 			WHERE noeud_routier = $1 or noeud_voisin = $1
 		);
 	`
-	rows, err := c.Conn.DB.Query(query, gid)
+	rows, err := repo.conn.DB.Query(query, gid)
 	if err != nil {
-		fmt.Println("Error while querying the database : ", err)
+		fmt.Println("Error while querying the database (GetVoisins) : ", err)
 		return []Voisin{}
 	}
 	defer rows.Close()
@@ -140,29 +128,30 @@ func (repo *NoeudRoutierRepo) GetGidByIdRte500(idRte500 string) int {
 		WHERE id_rte500 = $1
 	`
 	var gid int
-	row := c.Conn.DB.QueryRow(query, idRte500)
+	row := repo.conn.DB.QueryRow(query, idRte500)
 	err := row.Scan(&gid)
 	if err != nil {
-		fmt.Println("Error while querying the database : ", err)
+		fmt.Println("Error while querying the database (GetGidByIdRte500) : ", err)
 		return -1
 	}
 	return gid
 }
 
-func (repo *NoeudRoutierRepo) GetByPrimaryKey(gid int) *NoeudRoutier {
+func (repo *NoeudRoutierRepo) GetIdRte500ByPrimaryKey(gid int) (*NoeudRoutier, error) {
 	query := `
 		SELECT id_rte500
 		FROM noeud_routier
 		WHERE gid = $1
 	`
 	var idRte500 string
-	row := c.Conn.DB.QueryRow(query, gid)
+	row := repo.conn.DB.QueryRow(query, gid)
 	err := row.Scan(&idRte500)
 	if err != nil {
-		fmt.Println("Error while querying the database : ", err)
-		return nil
+		fmt.Println("Error while querying the database (GetByPrimaryKey) : ", err)
+		return nil, err
 	}
-	return NewNoeudRoutier(gid, idRte500)
+	res := NewNoeudRoutier(gid, idRte500)
+	return res, nil
 }
 
 func (repo *NoeudRoutierRepo) GetGeomFromGid(gid int) string {
@@ -172,12 +161,12 @@ func (repo *NoeudRoutierRepo) GetGeomFromGid(gid int) string {
 		WHERE gid = $1
 	`
 
-	row := c.Conn.DB.QueryRow(query, gid)
+	row := repo.conn.DB.QueryRow(query, gid)
 
 	var geom string
 	err := row.Scan(&geom)
 	if err != nil {
-		fmt.Println("Error while querying the database : ", err)
+		fmt.Println("Error while querying the database (GetGeomFromGid) : ", err)
 		return ""
 	}
 	return geom
@@ -185,9 +174,9 @@ func (repo *NoeudRoutierRepo) GetGeomFromGid(gid int) string {
 
 func (repo *NoeudRoutierRepo) GetDistance(geom1, geom2 string) float64 {
 	query := `
-		SELECT ST_Distance(ST_GeomFromText($1, 4326), ST_GeomFromText($2, 4326))
+		SELECT ST_Distance(ST_GeomFromText($1, 4326)::geography, ST_GeomFromText($2, 4326)::geography)
 	`
-	row := c.Conn.DB.QueryRow(query, geom1, geom2)
+	row := repo.conn.DB.QueryRow(query, geom1, geom2)
 	var distance float64
 	err := row.Scan(&distance)
 	if err != nil {
@@ -206,7 +195,7 @@ func (repo *NoeudRoutierRepo) GetDistance2(gid1 int, gid2 int) float64 {
 	`
 	
 	// fmt.Println("GID1 : ", gid1)
-	row := c.Conn.DB.QueryRow(query, gid1)
+	row := repo.conn.DB.QueryRow(query, gid1)
 	var lon1 float64
 	var lat1 float64
 
@@ -220,7 +209,7 @@ func (repo *NoeudRoutierRepo) GetDistance2(gid1 int, gid2 int) float64 {
 		FROM geom_noeud_routier_xy
 		WHERE gid = $1;
 	`
-	row = c.Conn.DB.QueryRow(query, gid2)
+	row = repo.conn.DB.QueryRow(query, gid2)
 
 	var lon2 float64
 	var lat2 float64

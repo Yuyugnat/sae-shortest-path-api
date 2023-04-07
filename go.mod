@@ -2,6 +2,13 @@ module sae-shortest-path
 
 go 1.20
 
-require github.com/lib/pq v1.10.7
+require (
+	github.com/json-iterator/go v1.1.12
+	github.com/lib/pq v1.10.7
+	github.com/valyala/fastjson v1.6.4
+)
 
-require github.com/yuyugnat/heap v0.1.4 // indirect
+require (
+	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
+)

@@ -2,55 +2,77 @@ package connection
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 )
+
+type PostgresConn struct {
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	DBname   string `json:"dbname"`
+	DB       *sql.DB
+}
 
 const (
 	driver = "postgres"
 )
 
-var (
-	Conn *PostgresConn
-)
+var instance *PostgresConn
 
-type PostgresConn struct {
-	host     string
-	port     int
-	user     string
-	password string
-	dbname   string
-	DB *sql.DB
-}
-
-func NewPostgresConn(host string, port int, user, password, dbname string) *PostgresConn {
-	return &PostgresConn{
-		host:     host,
-		port:     port,
-		user:     user,
-		password: password,
-		dbname:   dbname,
+func newPostgresConn(confpath string) (*PostgresConn, error) {
+	var conn *PostgresConn
+	byteData, err := ioutil.ReadFile(confpath)
+	if err != nil {
+		fmt.Println("Error reading the configuration file", err)
+		return conn, err
 	}
+	err = json.Unmarshal(byteData, &conn)
+
+	if err != nil {
+		fmt.Println("Error unmarshaling the configuration file", err)
+		return conn, err
+	}
+
+	fmt.Println("Conn is", conn)
+
+	err = conn.open()
+	if err != nil {
+		fmt.Println("Error opening the connection", err)
+		return conn, err
+	}
+	return conn, nil
 }
 
-func (pc *PostgresConn) Open() {
+func GetInstance() (*PostgresConn, error) {
+	if instance == nil {
+		var err error
+		instance, err = newPostgresConn("connection/config.json")
+		if err != nil {
+			return nil, err
+		}
+	}
+	return instance, nil
+}
+
+func (pc *PostgresConn) open() error {
 	infos := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		pc.host,
-		pc.port,
-		pc.user,
-		pc.password,
-		pc.dbname,
+		pc.Host,
+		pc.Port,
+		pc.User,
+		pc.Password,
+		pc.DBname,
 	)
 
 	var err error
 	pc.DB, err = sql.Open(driver, infos)
-
-	if err != nil {
-		fmt.Println("Error opening the database", err)
-	}
+	return err
 }
 
-func (pc *PostgresConn) Close() {
+func (pc *PostgresConn) close() {
 	if pc.DB != nil {
 		pc.DB.Close()
 	}

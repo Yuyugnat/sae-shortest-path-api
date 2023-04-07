@@ -12,7 +12,9 @@ type NoeudCommune struct {
 	idNdRte    string
 }
 
-type NoeudCommuneRepo struct {}
+type NoeudCommuneRepo struct {
+	conn *c.PostgresConn
+}
 
 func NewNoeudCommune(gid int, idRte500 string, nomCommune string, idNdRte string) *NoeudCommune {
 	return &NoeudCommune{
@@ -24,20 +26,23 @@ func NewNoeudCommune(gid int, idRte500 string, nomCommune string, idNdRte string
 }
 
 func NewNoeudCommuneRepo() *NoeudCommuneRepo {
-	return &NoeudCommuneRepo{}
+	conn, _ := c.GetInstance()
+	return &NoeudCommuneRepo{
+		conn: conn,
+	}
 }
 
-func (repo *NoeudCommuneRepo) GetIdNdRteByName(name string) string {
+func (repo *NoeudCommuneRepo) GetIdNdRteByName(name string) (string, error) {
 	query := `
 		SELECT id_nd_rte
 		FROM noeud_commune
 		WHERE nom_comm = $1
 	`
-	row := c.Conn.DB.QueryRow(query, name)
+	row := repo.conn.DB.QueryRow(query, name)
 
 	var idNdRte string
-	row.Scan(&idNdRte)
-	return idNdRte
+	err := row.Scan(&idNdRte)
+	return idNdRte, err
 }
 
 func (repo *NoeudCommuneRepo) GetHeuristicDistance(gid1, gid2 int) float64 {
@@ -47,7 +52,7 @@ func (repo *NoeudCommuneRepo) GetHeuristicDistance(gid1, gid2 int) float64 {
 		WHERE gid_1 = $1 AND gid_2 = $2
 	`
 
-	row := c.Conn.DB.QueryRow(query, gid1, gid2)
+	row := repo.conn.DB.QueryRow(query, gid1, gid2)
 
 	if err := row.Err(); err != nil {
 		fmt.Println("Error while querying data : ", err)
@@ -57,4 +62,17 @@ func (repo *NoeudCommuneRepo) GetHeuristicDistance(gid1, gid2 int) float64 {
 	var distance float64
 	row.Scan(&distance)
 	return distance
+}
+
+func (repo *NoeudCommuneRepo) GetSuperficie(nom string) int {
+	query := `
+		SELECT superficie
+		FROM superficie_commune
+		WHERE nom_comm = $1
+	`
+	row := repo.conn.DB.QueryRow(query, nom)
+
+	var superficie int
+	row.Scan(&superficie)
+	return superficie
 }

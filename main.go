@@ -1,23 +1,17 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	c "sae-shortest-path/connection"
-	o "sae-shortest-path/objects"
-	s "sae-shortest-path/solver"
+	s "sae-shortest-path/testing"
+
+	fast "sae-shortest-path/fastest"
+	hc "sae-shortest-path/testing/calculator"
+	nb "sae-shortest-path/testing/neighbors"
+	prio "sae-shortest-path/testing/priorityqueue"
 	"time"
 
 	_ "github.com/lib/pq"
-)
-
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "tp1"
-	password = "tp12023"
-	dbname   = "sae"
 )
 
 var (
@@ -25,17 +19,12 @@ var (
 )
 
 func main() {
-	pgConn := c.NewPostgresConn(host, port, user, password, dbname)
-	pgConn.Open()
-	defer pgConn.Close()
-	pgConn.Test()
-
-	c.Conn = pgConn
+	nb.Load()
 
 	cors := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "POST, GET")
+			w.Header().Set("Access-Control-Allow-Methods", "GET")
 			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 			h.ServeHTTP(w, r)
 		})
@@ -43,47 +32,94 @@ func main() {
 
 	mux = http.NewServeMux()
 
-	mux.HandleFunc("/coucou", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("coucou"))
-	})
-
-	mux.HandleFunc("/hey", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hey " + r.URL.Query().Get("name")))
-	})
-
 	mux.HandleFunc("/shortest-path", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-
-		communeRepo := o.NewNoeudCommuneRepo()
-		noeudRoutierRepo := o.NewNoeudRoutierRepo()
 
 		depart := r.URL.Query().Get("depart")
 		arrivee := r.URL.Query().Get("arrivee")
-		departIdNdRte:= communeRepo.GetIdNdRteByName(depart)
-		arriveeIdNdRte := communeRepo.GetIdNdRteByName(arrivee)
-		departGid := noeudRoutierRepo.GetGidByIdRte500(departIdNdRte)
-		arriveeGid := noeudRoutierRepo.GetGidByIdRte500(arriveeIdNdRte)
 
-		fmt.Println(departGid, depart, arriveeGid, arrivee)
-		geomDepart := noeudRoutierRepo.GetGeomFromGid(departGid)
-		geomArrivee := noeudRoutierRepo.GetGeomFromGid(arriveeGid)
+		solver := fast.NewFastest(depart, arrivee)
 
-		fmt.Printf("The distance between %s and %s is %f\n", depart, arrivee, noeudRoutierRepo.GetDistance(geomDepart, geomArrivee))
-
-		// solver := s.NewDijkstra(departGid, arriveeGid)
-		solver := s.NewAStar(departGid, arriveeGid)
 		now := time.Now()
-		distance, times := solver.Solve()
-		fmt.Printf("{\n")
-		fmt.Printf("   Time: %f\n", time.Since(now).Seconds())
-		fmt.Printf("\n   Distance: %s - %s  => %f\n\n", depart, arrivee, distance)
-		for k, v := range times {
-			fmt.Printf("   Action: %s => took %f seconds in %d calls\n", k, v.Time, v.Call)
+		res := solver.Solve()
+		fmt.Printf("Execution time:%f\n", time.Since(now).Seconds())
+
+		switch res.ErrCode {
+		case fast.NoErr:
+			fmt.Printf("Found : %f\n", res.Distance)
+			w.WriteHeader(http.StatusOK)
+		case fast.NoDepartOrArrivee:
+			w.WriteHeader(http.StatusNotFound)
+		case fast.NoPath:
+			w.WriteHeader(http.StatusNotFound)
+		case fast.NotReady:
+			w.WriteHeader(http.StatusServiceUnavailable)
 		}
-		fmt.Printf("}\n")
-		result := s.NewResultat(distance)
-		resp, _ := json.Marshal(result)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(res.JSON()))
+	})
+
+	mux.HandleFunc("/debug-shortest-path", func(w http.ResponseWriter, r *http.Request) {
+		var solver s.ISolver
+		var nbGetter nb.NeighborGetter
+		var hCalc hc.HeuristicCalculator
+		var queue prio.PriorityQueue
+
+		switch r.URL.Query().Get("hcalc") {
+		default:
+			hCalc = hc.NewHaversineCalculator()
+		}
+
+		switch r.URL.Query().Get("nbget") {
+		default:
+			nbGetter = nb.GetFLInstance()
+		}
+
+		switch r.URL.Query().Get("prioqueue") {
+		case "minheap":
+			queue = prio.NewPrioMinHeap()
+		case "map":
+			queue = prio.NewPrioMap()
+		default:
+			queue = prio.NewPrioMinHeap()
+		}
+
+
+
+		switch r.URL.Query().Get("solver") {
+		case "dijkstra":
+			solver = s.NewDijkstra(nbGetter)
+		case "astar":
+			solver = s.NewAStar(nbGetter, hCalc, queue)
+		default: 
+			// A*
+			solver = s.NewAStar(nbGetter, hCalc, queue)
+		}
+
+		depart := r.URL.Query().Get("depart")
+		arrivee := r.URL.Query().Get("arrivee")
+
+		now := time.Now()
+		res := solver.Solve(depart, arrivee)
+		solver.Debug().TotalTime = time.Since(now).Seconds()
+		solver.Debug().Distance = res.Distance
+
+		switch res.ErrCode {
+		case s.NoErr:
+			w.WriteHeader(http.StatusOK)
+		case s.NoDepartOrArrivee:
+			w.WriteHeader(http.StatusNotFound)
+		case s.NoPath:
+			w.WriteHeader(http.StatusNotFound)
+		case s.NotReady:
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+
+		resp := solver.Debug().JSON()
 		w.Write(resp)
+		fmt.Println(string(resp))
 	})
 
 	http.ListenAndServe(":8080", cors(mux))
