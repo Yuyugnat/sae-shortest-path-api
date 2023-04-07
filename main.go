@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	s "sae-shortest-path/testing"
 
 	fast "sae-shortest-path/fastest"
@@ -54,6 +55,8 @@ func main() {
 		case fast.NotReady:
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
+
+		os.WriteFile("example.json", res.JSON(), 0777)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(res.JSON()))
