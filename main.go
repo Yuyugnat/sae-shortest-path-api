@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	s "sae-shortest-path/testing"
+	"strconv"
 
 	fast "sae-shortest-path/fastest"
 	hc "sae-shortest-path/testing/calculator"
@@ -16,11 +18,20 @@ import (
 )
 
 var (
-	mux *http.ServeMux
+	mux  *http.ServeMux
+	port = 8080
 )
 
 func main() {
 	nb.Load()
+
+	if len(os.Args) > 1 {
+		potentialPort, err := strconv.Atoi(os.Args[1])
+		if err != nil {
+			log.Fatalln(err)
+		}
+		port = potentialPort
+	}
 
 	cors := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -87,14 +98,12 @@ func main() {
 			queue = prio.NewPrioMinHeap()
 		}
 
-
-
 		switch r.URL.Query().Get("solver") {
 		case "dijkstra":
-			solver = s.NewDijkstra(nbGetter)
+			solver = s.NewDijkstra(nbGetter, hCalc, queue)
 		case "astar":
 			solver = s.NewAStar(nbGetter, hCalc, queue)
-		default: 
+		default:
 			// A*
 			solver = s.NewAStar(nbGetter, hCalc, queue)
 		}
@@ -125,5 +134,5 @@ func main() {
 		fmt.Println(string(resp))
 	})
 
-	http.ListenAndServe(":8080", cors(mux))
+	http.ListenAndServe(fmt.Sprintf(":%d", port), cors(mux))
 }

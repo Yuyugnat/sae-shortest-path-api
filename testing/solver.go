@@ -2,6 +2,7 @@ package testing
 
 import (
 	"fmt"
+	c "sae-shortest-path/connection"
 	bug "sae-shortest-path/debugging"
 	o "sae-shortest-path/objects"
 	nb "sae-shortest-path/testing/neighbors"
@@ -77,6 +78,27 @@ func (s *solver) InitSearch(depart, arrivee string) error {
 	s.Arrivee = arrivee
 	s.Reversed = reversed
 	return nil
+}
+
+func (s *solver) GetPointFromGid(gid int) Point {
+	query := `
+		SELECT lat, lon
+		FROM geom_noeud_routier_xy
+		WHERE gid = $1
+	`
+	var lat float64
+	var lon float64
+	conn, err := c.GetInstance()
+	if err != nil {
+		fmt.Println("Error while getting the database connection : ", err)
+		return Point{}
+	}
+	err = conn.DB.QueryRow(query, gid).Scan(&lat, &lon)
+	if err != nil {
+		fmt.Println("Error while querying the database (GetPointFromGid) : ", err)
+		return Point{}
+	}
+	return Point{Lat: lat, Lon: lon}
 }
 
 func (s *solver) Debug() *bug.Debug {

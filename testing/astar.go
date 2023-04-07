@@ -1,14 +1,12 @@
 package testing
 
 import (
-	"fmt"
 	"math"
-	c "sae-shortest-path/connection"
 	"sae-shortest-path/data"
 	node "sae-shortest-path/testing/Node"
-	prio "sae-shortest-path/testing/priorityqueue"
 	hc "sae-shortest-path/testing/calculator"
 	n "sae-shortest-path/testing/neighbors"
+	prio "sae-shortest-path/testing/priorityqueue"
 )
 
 var (
@@ -175,7 +173,12 @@ func (s *AStar) GetAdjacentNodes(current *node.AStarNode) {
 			}
 			var h float64
 			s.Debug().GetTimeUsing("heuristic", func() {
-				h = s.hCalc.Compute(&asn, current)
+				h = s.hCalc.Compute(&asn, &node.AStarNode{
+					Node: node.Node{
+						Lat: s.LastPoint.Lat,
+						Lon: s.LastPoint.Lon,
+					},
+				})
 			})
 			asn.HDistance = h
 			potentialGScore := s.GScore[current.Gid] + asn.Distance
@@ -189,25 +192,4 @@ func (s *AStar) GetAdjacentNodes(current *node.AStarNode) {
 			}
 		}
 	})
-}
-
-func (s *AStar) GetPointFromGid(gid int) Point {
-	query := `
-		SELECT lat, lon
-		FROM geom_noeud_routier_xy
-		WHERE gid = $1
-	`
-	var lat float64
-	var lon float64
-	conn, err := c.GetInstance()
-	if err != nil {
-		fmt.Println("Error while getting the database connection : ", err)
-		return Point{}
-	}
-	err = conn.DB.QueryRow(query, gid).Scan(&lat, &lon)
-	if err != nil {
-		fmt.Println("Error while querying the database (GetPointFromGid) : ", err)
-		return Point{}
-	}
-	return Point{Lat: lat, Lon: lon}
 }

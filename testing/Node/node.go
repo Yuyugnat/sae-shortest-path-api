@@ -12,3 +12,7 @@ type AStarNode struct {
 	Node
 	HDistance float64
 }
+
+type DijkstraNode struct {
+	Node
+}

@@ -128,8 +128,8 @@ func (s *AStar) GetAdjacentNodes(current *AStarNode) {
 
 	for _, v := range neighbors {
 		h := haversine(&Point{
-			Lat: current.Lat,
-			Lon: current.Lon,
+			Lat: v.Lat,
+			Lon: v.Lon,
 		}, s.LastPoint)
 		// })
 		asn := AStarNode{
