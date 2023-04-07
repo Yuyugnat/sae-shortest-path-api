@@ -24,6 +24,7 @@ Où la distance correspond au plus court chemin entre les deux villes. Et où ch
     "lon": 4.32 // pour la longitude
 }
 ```
+Il y a un exemple de réponse dans le fichier ```examples/example.json```
 ## Code d'erreur
 Pour le moment les codes sont les suivants :
 * 0 -> pas de problème
