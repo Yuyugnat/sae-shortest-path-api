@@ -30,3 +30,9 @@ Pour le moment les codes sont les suivants :
 * 1 -> pas de chemin trouvé car les villes n'existent pas
 * 2 -> erreur dans l'algorithme (impossible inshallah)
 * 3 -> le serveur n'est pas encore prêt à recevoir des requêtes
+
+## Lancer l'API
+À la racine du projet :
+```sh
+go run main.go
+```
