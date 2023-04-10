@@ -5,14 +5,6 @@ type Node struct {
 	Lat       float64
 	Lon       float64
 	Distance  float64
-	Prev      *Node
-}
-
-type AStarNode struct {
-	Node
 	HDistance float64
-}
-
-type DijkstraNode struct {
-	Node
+	Prev      *Node
 }

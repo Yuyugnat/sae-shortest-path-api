@@ -2,7 +2,7 @@ package calculator
 
 import (
 	"math"
-	node "sae-shortest-path/testing/Node"
+	node "sae-shortest-path/testing/node"
 )
 
 const (
@@ -15,11 +15,11 @@ func NewHaversineCalculator() *HaversineCalculator {
 	return &HaversineCalculator{}
 }
 
-func (h *HaversineCalculator) Compute(gid1, gid2 *node.AStarNode) float64 {
+func (h *HaversineCalculator) Compute(gid1, gid2 *node.Node) float64 {
 	return haversine(gid1, gid2)
 }
 
-func haversine(gid1, gid2 *node.AStarNode) float64 {
+func haversine(gid1, gid2 *node.Node) float64 {
 	phi1 := gid1.Lat * degToRad
 	phi2 := gid2.Lat * degToRad
 	deltaPhi := (gid2.Lat - gid1.Lat) * degToRad

@@ -2,7 +2,7 @@ package priorityqueue
 
 import (
 	"sae-shortest-path/structure"
-	node "sae-shortest-path/testing/Node"
+	node "sae-shortest-path/testing/node"
 )
 
 type PrioMinHeap struct {
@@ -15,11 +15,11 @@ func NewPrioMinHeap() *PrioMinHeap {
 	}
 }
 
-func (p *PrioMinHeap) Pop() node.AStarNode {
+func (p *PrioMinHeap) Pop() node.Node {
 	return p.heap.ExtractMin()
 }
 
-func (p *PrioMinHeap) Push(key float64, val node.AStarNode) {
+func (p *PrioMinHeap) Push(key float64, val node.Node) {
 	p.heap.Insert(key, val)
 }
 

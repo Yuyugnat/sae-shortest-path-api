@@ -1,10 +1,10 @@
 package structure
 
-import node "sae-shortest-path/testing/Node"
+import node "sae-shortest-path/testing/node"
 
 type Heapnode struct {
 	Key float64
-	Val node.AStarNode
+	Val node.Node
 }
 
 type MinHeap struct {
@@ -15,7 +15,7 @@ func NewMinHeap() *MinHeap {
 	return &MinHeap{}
 }
 
-func (h *MinHeap) Insert(key float64, val node.AStarNode) {
+func (h *MinHeap) Insert(key float64, val node.Node) {
 	h.Heap = append(h.Heap, Heapnode{key, val})
 	h.bubbleUp(len(h.Heap) - 1)
 }
@@ -31,9 +31,9 @@ func (h *MinHeap) bubbleUp(index int) {
 	}
 }
 
-func (h *MinHeap) ExtractMin() node.AStarNode {
+func (h *MinHeap) ExtractMin() node.Node {
 	if len(h.Heap) == 0 {
-		return *new(node.AStarNode)
+		return *new(node.Node)
 	}
 	min := h.Heap[0]
 	h.Heap[0] = h.Heap[len(h.Heap)-1]

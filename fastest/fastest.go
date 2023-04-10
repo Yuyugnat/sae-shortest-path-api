@@ -90,11 +90,13 @@ func (s *AStar) Solve() *Result {
 		}
 	}
 
-	pt := s.GetPointFromGid(s.ArriveeGid)
-	s.LastPoint = &pt
+	pt1 := s.GetPointFromGid(s.ArriveeGid)
+	s.LastPoint = &pt1
 
-	pt = s.GetPointFromGid(s.DepartGid)
-	dist := haversine(&pt, s.LastPoint)
+	pt2 := s.GetPointFromGid(s.DepartGid)
+	dist := haversine(pt2.Lat, pt2.Lon, s.LastPoint.Lat, s.LastPoint.Lon)
+
+	fmt.Println("caca :", dist)
 
 	startNode := &AStarNode{
 		Gid:       s.DepartGid,
@@ -107,14 +109,14 @@ func (s *AStar) Solve() *Result {
 	startNode.Lat = ptStart.Lat
 	startNode.Lon = ptStart.Lon
 
-	s.Opened.Insert(startNode.HDistance, *startNode)
+	s.Opened.Insert(startNode.HDistance, startNode)
 
 	for !s.Opened.IsEmpty() {
 		current := s.Opened.ExtractMin()
 		if current.Gid == s.ArriveeGid {
-			return s.buildResult(&current)
+			return s.buildResult(current)
 		}
-		s.GetAdjacentNodes(&current)
+		s.GetAdjacentNodes(current)
 	}
 
 	return &Result{
@@ -127,26 +129,21 @@ func (s *AStar) GetAdjacentNodes(current *AStarNode) {
 	neighbors := data.GetInstance().Table[current.Gid]
 
 	for _, v := range neighbors {
-		h := haversine(&Point{
-			Lat: v.Lat,
-			Lon: v.Lon,
-		}, s.LastPoint)
-		// })
-		asn := AStarNode{
-			Gid:       v.Gid,
-			Lat:       v.Lat,
-			Lon:       v.Lon,
-			Length:  v.Length,
-			Prev:      nil,
-			HDistance: h,
-		}
-
-		potentialGScore := s.GScore[current.Gid] + asn.Length
+		h := haversine(v.Lat, v.Lon, s.LastPoint.Lat, s.LastPoint.Lon)
+		// h := 0.0
+	
+		potentialGScore := s.GScore[current.Gid] + v.Length
 		val, exists := s.GScore[v.Gid]
 		if !exists || potentialGScore < val {
-			asn.Prev = current
-			s.GScore[asn.Gid] = potentialGScore
-			s.Opened.Insert(potentialGScore+asn.HDistance, asn)
+			s.GScore[v.Gid] = potentialGScore
+			s.Opened.Insert(potentialGScore+h, &AStarNode{
+				Gid:       v.Gid,
+				Lat:       v.Lat,
+				Lon:       v.Lon,
+				Length:  v.Length,
+				Prev:      current,
+				HDistance: h,
+			})
 		}
 	}
 }
@@ -172,12 +169,20 @@ func (s *AStar) GetPointFromGid(gid int) Point {
 	return Point{Lat: lat, Lon: lon}
 }
 
-func haversine(p1, p2 *Point) float64 {
-	sinDeltaPhi := math.Sin(((p2.Lat - p1.Lat) * degToRad) / 2)
-	sinDeltaLambda := math.Sin(((p2.Lon - p1.Lon) * degToRad) / 2)
-	a := sinDeltaPhi*sinDeltaPhi + math.Cos(p1.Lat * degToRad)*math.Cos(p2.Lat * degToRad)*sinDeltaLambda*sinDeltaLambda
+func haversine(lat1, lon1, lat2, lon2 float64) float64 {
+	sinDeltaPhi := math.Sin(((lat2 - lat1) * degToRad) / 2)
+	sinDeltaLambda := math.Sin(((lon2 - lon1) * degToRad) / 2)
+	a := sinDeltaPhi*sinDeltaPhi + math.Cos(lat1 * degToRad)*math.Cos(lat2 * degToRad)*sinDeltaLambda*sinDeltaLambda
 	c := 2.0 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 	distance := 6371.0 * c
 
 	return distance
+}
+
+func PublicHaversine(lat1, lon1, lat2, lon2 float64) float64 {
+	return haversine(lat1, lon1, lat2, lon2)
+}
+
+func (a *AStar) Debug() *bug.Debug {
+	return a.debugger
 }

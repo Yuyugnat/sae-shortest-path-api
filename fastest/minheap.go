@@ -4,7 +4,7 @@ package fastest
 
 type Heapnode struct {
 	Key float64
-	Val AStarNode
+	Val *AStarNode
 }
 
 type MinHeap struct {
@@ -15,7 +15,7 @@ func NewMinHeap() *MinHeap {
 	return &MinHeap{}
 }
 
-func (h *MinHeap) Insert(key float64, val AStarNode) {
+func (h *MinHeap) Insert(key float64, val *AStarNode) {
 	h.Heap = append(h.Heap, Heapnode{key, val})
 	h.bubbleUp(len(h.Heap) - 1)
 }
@@ -31,9 +31,9 @@ func (h *MinHeap) bubbleUp(index int) {
 	}
 }
 
-func (h *MinHeap) ExtractMin() AStarNode {
+func (h *MinHeap) ExtractMin() *AStarNode {
 	if len(h.Heap) == 0 {
-		return *new(AStarNode)
+		return new(AStarNode)
 	}
 	min := h.Heap[0]
 	h.Heap[0] = h.Heap[len(h.Heap)-1]

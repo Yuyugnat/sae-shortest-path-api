@@ -1,9 +1,9 @@
 package calculator
 
 import (
-	node "sae-shortest-path/testing/Node"
+	node "sae-shortest-path/testing/node"
 )
 
 type HeuristicCalculator interface {
-	Compute(gid1, gid2 *node.AStarNode) float64
+	Compute(gid1, gid2 *node.Node) float64
 }

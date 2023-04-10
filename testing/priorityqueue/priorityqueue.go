@@ -1,9 +1,9 @@
 package priorityqueue
 
-import node "sae-shortest-path/testing/Node"
+import node "sae-shortest-path/testing/node"
 
 type PriorityQueue interface {
-	Pop() node.AStarNode
-	Push(float64, node.AStarNode)
+	Pop() node.Node
+	Push(float64, node.Node)
 	Empty() bool
 }

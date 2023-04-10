@@ -67,10 +67,10 @@ func main() {
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
 
-		os.WriteFile("example.json", res.JSON(), 0777)
-
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(res.JSON()))
+
+		solver.Debug().Print()
 	})
 
 	mux.HandleFunc("/debug-shortest-path", func(w http.ResponseWriter, r *http.Request) {
@@ -79,12 +79,22 @@ func main() {
 		var hCalc hc.HeuristicCalculator
 		var queue prio.PriorityQueue
 
+		fmt.Println(r.URL.Query().Get("hcalc"))
+
 		switch r.URL.Query().Get("hcalc") {
+		case "haversine":
+			hCalc = hc.NewHaversineCalculator()
+		case "dijkstra":
+			hCalc = hc.NewDijkstraCalculator()
 		default:
 			hCalc = hc.NewHaversineCalculator()
 		}
 
 		switch r.URL.Query().Get("nbget") {
+		case "voisins_jsonb":
+			nbGetter = nb.NewJsonbView()
+		case "hash_table":
+			nbGetter = nb.GetFLInstance()
 		default:
 			nbGetter = nb.GetFLInstance()
 		}
@@ -98,15 +108,7 @@ func main() {
 			queue = prio.NewPrioMinHeap()
 		}
 
-		switch r.URL.Query().Get("solver") {
-		case "dijkstra":
-			solver = s.NewDijkstra(nbGetter, hCalc, queue)
-		case "astar":
-			solver = s.NewAStar(nbGetter, hCalc, queue)
-		default:
-			// A*
-			solver = s.NewAStar(nbGetter, hCalc, queue)
-		}
+		solver = s.NewSolver(nbGetter, hCalc, queue)
 
 		depart := r.URL.Query().Get("depart")
 		arrivee := r.URL.Query().Get("arrivee")
