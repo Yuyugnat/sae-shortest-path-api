@@ -13,6 +13,7 @@ import (
 	nb "sae-shortest-path/testing/neighbors"
 	prio "sae-shortest-path/testing/priorityqueue"
 	conn "sae-shortest-path/connection"
+	hist "sae-shortest-path/history"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -72,7 +73,25 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(res.JSON()))
 
+		hist.PutHistory("test", res)
+
 		solver.Debug().Print()
+	})
+
+	mux.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		userID := r.URL.Query().Get("user")
+
+		history, err := hist.GetHistory(userID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json, _ := history.JSON()
+		w.Write(json)
 	})
 
 	mux.HandleFunc("/debug-shortest-path", func(w http.ResponseWriter, r *http.Request) {
