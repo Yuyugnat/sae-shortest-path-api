@@ -30,6 +30,7 @@ type AStar struct {
 	LastPoint   *Point
 	Opened      MinHeap
 	GScore      map[int]float64
+	table 		map[int][]data.Neighbor
 }
 
 type AStarNode struct {
@@ -77,6 +78,7 @@ func NewFastest(depart, arrivee string) *AStar {
 		NbGetter:   data.GetInstance(),
 		Opened:     MinHeap{},
 		GScore:     make(map[int]float64),
+		table: data.GetInstance().Table,
 	}
 
 	return res
@@ -126,11 +128,11 @@ func (s *AStar) Solve() *Result {
 }
 
 func (s *AStar) GetAdjacentNodes(current *AStarNode) {
-	neighbors := data.GetInstance().Table[current.Gid]
+	var neighbors []data.Neighbor
+	neighbors = s.table[current.Gid]
 
 	for _, v := range neighbors {
 		h := haversine(v.Lat, v.Lon, s.LastPoint.Lat, s.LastPoint.Lon)
-		// h := 0.0
 	
 		potentialGScore := s.GScore[current.Gid] + v.Length
 		val, exists := s.GScore[v.Gid]

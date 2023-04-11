@@ -13,8 +13,9 @@ type Debug struct {
 }
 
 type executionTime struct {
-	Time float64 `json:"Time"`
+	Time float64 `json:"time"`
 	Call int     `json:"call"`
+	TimeByCall float64 `json:"timeByCall"`
 }
 
 func NewDebug() *Debug {
@@ -41,6 +42,7 @@ func (d *Debug) GetTimeUsing(funcname string, f func()) {
 }
 
 func (d *Debug) Print() {
+	d.SetTimeByCall()
 	maxLen := 0
 	for k := range d.TimesSpent {
 		if len(k) > maxLen {
@@ -50,17 +52,28 @@ func (d *Debug) Print() {
 	fmt.Printf("{\n")
 	for k, v := range d.TimesSpent {
 		nameFormat := fmt.Sprintf("%%%ds", maxLen)
-		fmt.Printf("   Action: "+nameFormat+" => took %9f s   in %9d calls\n", k, v.Time, v.Call)
+		fmt.Printf("   Action: "+nameFormat+" => took %9f s   in %9d calls\n, meaning ", k, v.Time, v.Call)
 	}
 	fmt.Printf("}\n")
 	d.Reset()
 }
 
 func (d *Debug) JSON() []byte {
+	d.SetTimeByCall()
 	res, _ := json.Marshal(d)
 	return res
 }
 
 func (d *Debug) Reset() {
 	d.TimesSpent = make(map[string]executionTime)
+}
+
+func (d *Debug) SetTimeByCall() {
+	for k, v := range d.TimesSpent {
+		d.TimesSpent[k] = executionTime{
+			Call: v.Call,
+			Time: v.Time,
+			TimeByCall: v.Time / float64(v.Call) * 1000000000,
+		}
+	}
 }

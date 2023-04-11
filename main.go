@@ -12,6 +12,7 @@ import (
 	hc "sae-shortest-path/testing/calculator"
 	nb "sae-shortest-path/testing/neighbors"
 	prio "sae-shortest-path/testing/priorityqueue"
+	conn "sae-shortest-path/connection"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -23,6 +24,7 @@ var (
 )
 
 func main() {
+	conn.FirstConnection()
 	nb.Load()
 
 	if len(os.Args) > 1 {

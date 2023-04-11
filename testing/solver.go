@@ -236,7 +236,7 @@ func (s *Solver) Solve(depart, arrivee string) *Resultat {
 
 func (s *Solver) GetAdjacentNodes(current *node.Node) {
 	var neighbors []data.Neighbor
-	s.Debug().GetTimeUsing("get voisins in map", func() {
+	s.Debug().GetTimeUsing("get voisins by gid", func() {
 		neighbors = s.NbGetter.Get(current.Gid)
 	})
 

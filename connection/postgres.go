@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"time"
 )
 
 type PostgresConn struct {
@@ -84,4 +85,20 @@ func (pc *PostgresConn) Test() {
 		return
 	}
 	fmt.Println("The DB is alive !")
+}
+
+func FirstConnection() {
+	_, err := GetInstance()
+	index := 0
+	fiboTab := []int{0, 1}
+	for err != nil {
+		fmt.Println("Error getting the instance", err)
+		fmt.Printf("Trying to reconnect after %d seconds\n", fiboTab[index])
+		time.Sleep(time.Duration(fiboTab[index]) * time.Second)
+		index++
+		if index >= len(fiboTab) {
+			fiboTab = append(fiboTab, fiboTab[index-1]+fiboTab[index-2])
+		}
+		_, err = GetInstance()
+	}
 }
