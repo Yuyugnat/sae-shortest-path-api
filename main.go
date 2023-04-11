@@ -51,6 +51,7 @@ func main() {
 
 		depart := r.URL.Query().Get("depart")
 		arrivee := r.URL.Query().Get("arrivee")
+		userID := r.URL.Query().Get("user")
 
 		solver := fast.NewFastest(depart, arrivee)
 
@@ -73,7 +74,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(res.JSON()))
 
-		hist.PutHistory("test", res)
+		hist.PutHistory(userID, res)
 
 		solver.Debug().Print()
 	})
