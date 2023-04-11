@@ -26,6 +26,10 @@ func (r *Result) JSON() []byte {
 	return res
 }
 
+func (r * Result) String() string {
+	return string(r.JSON())
+}
+
 func reversePath(path []Point) []Point {
 	var res []Point
 	for i := len(path) - 1; i >= 0; i-- {

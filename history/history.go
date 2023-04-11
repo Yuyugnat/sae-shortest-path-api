@@ -18,7 +18,7 @@ func PutHistory(userID string, path *fast.Result) error {
 	`
 
 	conn, _ := c.GetInstance()
-	_, err := conn.DB.Exec(query, userID, path)
+	_, err := conn.DB.Exec(query, userID, path.String())
 	if err != nil {
 		fmt.Println("Error inserting the path in the history", err)
 		return err
