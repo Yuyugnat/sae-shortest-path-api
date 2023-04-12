@@ -88,10 +88,10 @@ func (pc *PostgresConn) Test() {
 }
 
 func FirstConnection() {
-	_, err := GetInstance()
+	inst, err := GetInstance()
 	index := 0
 	fiboTab := []int{0, 1}
-	for err != nil {
+	for err != nil || inst.DB.Ping() != nil {
 		fmt.Println("Error getting the instance", err)
 		fmt.Printf("Trying to reconnect after %d seconds\n", fiboTab[index])
 		time.Sleep(time.Duration(fiboTab[index]) * time.Second)
@@ -99,6 +99,6 @@ func FirstConnection() {
 		if index >= len(fiboTab) {
 			fiboTab = append(fiboTab, fiboTab[index-1]+fiboTab[index-2])
 		}
-		_, err = GetInstance()
+		inst, err = GetInstance()
 	}
 }
