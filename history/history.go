@@ -36,7 +36,7 @@ func GetHistory(userID string) (History, error) {
 		Paths: make([]HistoryPath, 0),
 	}
 	query := `
-		SELECT data
+		SELECT date
 		FROM path_history
 		WHERE user_id = $1
 	`
