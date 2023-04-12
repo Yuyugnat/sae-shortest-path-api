@@ -131,19 +131,18 @@ func (s *AStar) GetAdjacentNodes(current *AStarNode) {
 	neighbors := s.table[current.Gid]
 
 	for _, v := range neighbors {
-		// h := haversine(v.Lat, v.Lon, s.LastPoint.Lat, s.LastPoint.Lon)
-	
+		h := haversine(v.Lat, v.Lon, s.LastPoint.Lat, s.LastPoint.Lon)
 		potentialGScore := s.GScore[current.Gid] + v.Length
 		val, exists := s.GScore[v.Gid]
 		if !exists || potentialGScore < val {
 			s.GScore[v.Gid] = potentialGScore
-			s.Opened.Insert(potentialGScore, &AStarNode{
+			s.Opened.Insert(potentialGScore + h, &AStarNode{
 				Gid:       v.Gid,
 				Lat:       v.Lat,
 				Lon:       v.Lon,
 				Length:  v.Length,
 				Prev:      current,
-				HDistance: 0,
+				HDistance: h,
 			})
 		}
 	}
