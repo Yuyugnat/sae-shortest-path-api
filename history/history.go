@@ -12,18 +12,20 @@ type History struct {
 }
 
 type HistoryPath struct {
+	Date   string `json:"date"`
 	Depart  string `json:"depart"`
 	Arrivee string `json:"arrivee"`
+	Distance float64 `json:"distance"`
 }
 
 func PutHistory(userID string, path *fast.Result) error {
 	query := `
-		INSERT INTO path_history (user_id, date, depart, arrivee)
-		VALUES ($1, NOW(), $2, $3)
+		INSERT INTO path_history (user_id, date, depart, arrivee, distance)
+		VALUES ($1, NOW(), $2, $3, $4)
 	`
 
 	conn, _ := c.GetInstance()
-	_, err := conn.DB.Exec(query, userID, path.VilleDepart, path.VilleArrivee)
+	_, err := conn.DB.Exec(query, userID, path.VilleDepart, path.VilleArrivee, path.Distance)
 	if err != nil {
 		fmt.Println("Error inserting the path in the history", err)
 		return err
@@ -36,7 +38,7 @@ func GetHistory(userID string) (History, error) {
 		Paths: make([]HistoryPath, 0),
 	}
 	query := `
-		SELECT date
+		SELECT depart, arrivee, date, distance
 		FROM path_history
 		WHERE user_id = $1
 	`
