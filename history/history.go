@@ -8,17 +8,22 @@ import (
 )
 
 type History struct {
-	paths []fast.Result
+	Paths []HistoryPath `json:"paths"`
+}
+
+type HistoryPath struct {
+	Depart  string `json:"depart"`
+	Arrivee string `json:"arrivee"`
 }
 
 func PutHistory(userID string, path *fast.Result) error {
 	query := `
-		INSERT INTO path_history (user_id, date, data)
-		VALUES ($1, NOW(), $2)
+		INSERT INTO path_history (user_id, date, depart, arrivee)
+		VALUES ($1, NOW(), $2, $3)
 	`
 
 	conn, _ := c.GetInstance()
-	_, err := conn.DB.Exec(query, userID, path.String())
+	_, err := conn.DB.Exec(query, userID, path.VilleDepart, path.VilleArrivee)
 	if err != nil {
 		fmt.Println("Error inserting the path in the history", err)
 		return err
@@ -28,7 +33,7 @@ func PutHistory(userID string, path *fast.Result) error {
 
 func GetHistory(userID string) (History, error) {
 	res := History{
-		paths: []fast.Result{},
+		Paths: make([]HistoryPath, 0),
 	}
 	query := `
 		SELECT data
@@ -51,11 +56,14 @@ func GetHistory(userID string) (History, error) {
 		}
 		var result fast.Result
 		json.Unmarshal([]byte(data), &result)
-		res.paths = append(res.paths, result)
+		res.Paths = append(res.Paths, HistoryPath{
+			Depart:  result.VilleDepart,
+			Arrivee: result.VilleArrivee,
+		})
 	}
 	return res, nil
 }
 
 func (h *History) JSON() ([]byte, error) {
-	return json.Marshal(h.paths)
+	return json.Marshal(h.Paths)
 }
