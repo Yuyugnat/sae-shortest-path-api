@@ -51,14 +51,18 @@ func GetHistory(userID string) (History, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var data string
-		err = rows.Scan(&data)
+		var depart, arrivee, date string
+		var distance float64
+		err = rows.Scan(&depart, &arrivee, &date, &distance)
 		if err != nil {
 			return res, err
 		}
-		var result HistoryPath
-		json.Unmarshal([]byte(data), &result)
-		res.Paths = append(res.Paths, result)
+		res.Paths = append(res.Paths, HistoryPath{
+			Depart: depart,
+			Arrivee: arrivee,
+			Date: date,
+			Distance: distance,
+		})
 	}
 	return res, nil
 }
