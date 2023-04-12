@@ -56,12 +56,9 @@ func GetHistory(userID string) (History, error) {
 		if err != nil {
 			return res, err
 		}
-		var result fast.Result
+		var result HistoryPath
 		json.Unmarshal([]byte(data), &result)
-		res.Paths = append(res.Paths, HistoryPath{
-			Depart:  result.VilleDepart,
-			Arrivee: result.VilleArrivee,
-		})
+		res.Paths = append(res.Paths, result)
 	}
 	return res, nil
 }
