@@ -29,7 +29,7 @@ Il y a un exemple de réponse dans le fichier ```examples/example.json```
 Pour le moment les codes sont les suivants :
 * 0 -> pas de problème
 * 1 -> pas de chemin trouvé car les villes n'existent pas
-* 2 -> erreur dans l'algorithme (impossible inshallah)
+* 2 -> erreur dans l'algorithme (à priori impossible si l'API est bien implémentée)
 * 3 -> le serveur n'est pas encore prêt à recevoir des requêtes
 
 ## Lancer l'API

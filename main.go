@@ -51,7 +51,6 @@ func main() {
 
 		depart := r.URL.Query().Get("depart")
 		arrivee := r.URL.Query().Get("arrivee")
-		userID := r.URL.Query().Get("user")
 
 		solver := fast.NewFastest(depart, arrivee)
 
@@ -74,7 +73,10 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(res.JSON()))
 
-		hist.PutHistory(userID, res)
+		// hist.PutHistory(userID, res)
+		if userID := r.URL.Query().Get("user"); userID != "" {
+			hist.PutHistory(userID, res)
+		}
 
 		solver.Debug().Print()
 	})
@@ -86,6 +88,7 @@ func main() {
 
 		history, err := hist.GetHistory(userID)
 		if err != nil {
+			fmt.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
